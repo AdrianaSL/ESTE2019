@@ -322,7 +322,8 @@ grafico = function( resultados, harmonic = 1, d1, d2, main = " "){
   # LI_tendencia <- qnorm(0.025,resultados$mt[2,],sqrt(resultados$Ct[2,2,]))
   plot(resultados$mt[2,], type = "l", col =2, main="Estimação do Fator de Crescimento", las = 1,
        xlim = c( inic, length(y) ),  ylab = " ", xlab = " ", xaxt = "n", bty = "n", lwd=3)
-  axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(as.Date(dados$Data)[c(seq(1,length(y),12),length(y))], '%b-%y') )
+  # axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(as.Date(dados$Data)[c(seq(1,length(y),12),length(y))], '%b-%y') )
+  axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(dados$Data[c(seq(1,length(y),12),length(y))], '%b-%y') )
   polygon(c(c(1:length(y)), rev(c(1:length(y)))), c(LI_tendencia, rev(LS_tendencia)), 
           col= adjustcolor("darkgray", alpha.f = 0.5), border = NA)
   lines(LS_tendencia, col = "darkgray",lwd=2)
@@ -337,7 +338,8 @@ grafico = function( resultados, harmonic = 1, d1, d2, main = " "){
   # LI_sazonal <- qnorm(0.025,resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
   plot(resultados$mt[3,], type = "l", col =2, main = "Estimação da Sazonalidade - Harmônico 1", las = 1, 
        xlim = c( inic, length(y) ),  ylab = " ", xlab = " ", xaxt = "n", bty = "n", lwd=3)
-  axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(as.Date(dados$Data)[c(seq(1,length(y),12),length(y))], '%b-%y') )
+  # axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(as.Date(dados$Data)[c(seq(1,length(y),12),length(y))], '%b-%y') )
+  axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(dados$Data[c(seq(1,length(y),12),length(y))], '%b-%y') )
   polygon(c(c(1:length(y)), rev(c(1:length(y)))), c(LI_sazonal, rev(LS_sazonal)), col= adjustcolor("darkgray", alpha.f = 0.5), border = NA)
   lines(LS_sazonal, col = "darkgray",lwd=2)
   lines(LI_sazonal, col = "darkgray",lwd=2)
@@ -349,7 +351,8 @@ grafico = function( resultados, harmonic = 1, d1, d2, main = " "){
     # LI_sazonal <- qnorm(0.025,resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
     plot(resultados$mt[5,], type = "l", col =2, main = "Estimação da Sazonalidade - Harmônico 2", las = 1, 
          xlim = c( inic, length(y) ),  ylab = " ", xlab = " ", xaxt = "n", bty = "n", lwd=3)
-    axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(as.Date(dados$Data)[c(seq(1,length(y),12),length(y))], '%b-%y') )
+    # axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(as.Date(dados$Data)[c(seq(1,length(y),12),length(y))], '%b-%y') )
+    axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(dados$Data[c(seq(1,length(y),12),length(y))], '%b-%y') )
     polygon(c(c(1:length(y)), rev(c(1:length(y)))), c(LI_sazonal, rev(LS_sazonal)), col= adjustcolor("darkgray", alpha.f = 0.5), border = NA)
     lines(LS_sazonal, col = "darkgray",lwd=2)
     lines(LI_sazonal, col = "darkgray",lwd=2)
