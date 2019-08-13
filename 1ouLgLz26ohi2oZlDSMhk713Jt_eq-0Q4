@@ -1,0 +1,512 @@
+lines(LS_sazonal, col = "darkgray",lwd=2)
+lines(LI_sazonal, col = "darkgray",lwd=2)
+}
+harmonic = 3
+options(scipen = 9999)
+library(readxl)
+library(Metrics)
+library(dlm)
+library(readxl)
+library(expm)
+library(dplyr)
+setwd("C:\\Users\\adria\\Google Drive\\Estudos e Congressos\\ESTE2019")
+dados = read.csv2("ipca_201903SerieHist.csv", header = T, dec = ",", sep = ";")
+dados = dados %>% filter( ano > 1995 )
+y <- dados$IPCA
+dados$Data2 = paste0(tolower(dados$mes),"/",dados$ano)
+# dados$Data = as.Date.character(dados$Data2, "%m/%y")
+# dados$Data2 = as.Date.character(dados$Data, "%m/%y")
+source("function3.R")
+source("Harmonicos selecionados.R")
+#Definindo F,G e D
+G.mer = dlm::bdiag(G1,G2[[1]],G2[[2]])
+FF = matrix(c(1,0,1,0,1,0))
+F.mer  = matrix(FF,nrow=length(FF),ncol=length(y))
+D1 <- matrix(1/0.8,2,2)
+D2 <- matrix(1/1,2,2)
+D.mer = dlm::bdiag(D1,D2,D2)
+D.mer_estatico = dlm::bdiag(D1,D1,D1)
+F.t<-F.mer
+G<-G.mer
+# Definindo as quantidades iniciais
+n<-nrow(F.t)
+m0 <- rep(0,n)
+C0 <- diag(100000,n,n)
+n0 <- 0.1; d0 <- .001
+#n0 / d0
+#(n0 / 2)/((d0/2) ^ 2)
+pto.parada <- length(y) - 12 #prev a partir de pto.parada
+#com desconto - dinamico
+resultados <- modelo.2ordem.var.desc_prev.k(y, m0, C0, n0, d0, Wt = NULL, F.t, G, D.mer,h0=pto.parada,int=NULL)
+if( harmonic == 2 ){
+#   par(mfrow=c(2,2), cex.lab = 1.6, cex.axis = 1.5, cex.main = 2)
+par(mfrow=c(2,2),cex.lab=1.6,cex.axis=1.6,lab=c(15,6,5),mar=c(2,10,6,2),cex.main=1.8)
+}
+if( harmonic == 1 ){
+l <- rbind(c(1,1,2,2),
+c(0,3,3,0))
+layout(l)
+par(cex.lab=1.6,cex.axis=1.6,lab=c(15,6,5),mar=c(2,10,6,2),cex.main=1.8)
+layout.show(max(l))
+}
+p = nrow( resultados$mt )
+inic = 2*p + 1
+# Estimacoo do nivel
+LS_nivel <- qt.scaled(0.975,resultados$nt[pto.parada,],resultados$mt[1,],sqrt(resultados$Ct[1,1,]))
+LI_nivel <- qt.scaled(0.025,resultados$nt[pto.parada,],resultados$mt[1,],sqrt(resultados$Ct[1,1,]))
+# LS_nivel <- qnorm(0.975,resultados$mt[1,],sqrt(resultados$Ct[1,1,]))
+# LI_nivel <- qnorm(0.025,resultados$mt[1,],sqrt(resultados$Ct[1,1,]))
+plot(as.numeric(y),pch = 20, ylab = " ", xlab = " ", main = "Estimação do Nivel",
+xlim = c( inic, length(y) ), lwd = 5,  xaxt = "n", bty = "n", las = 1)
+axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(as.Date(dados$Data)[c(seq(1,length(y),12),length(y))], '%b-%y') )
+polygon(c(c(1:length(y)), rev(c(1:length(y)))), c(LI_nivel, rev(LS_nivel)), col= adjustcolor("darkgray", alpha.f = 0.5), border = NA)
+# axis(1, at = seq(1,length(y),12), labels = 2007:2018 )
+#polygon(x = c(1:length(y), rev(1:length(y))),
+#        y = c(LI_nivel, rev(LS_nivel)), col = "blue", border = NA)
+lines(resultados$mt[1,], col = 2, lwd=3)
+lines(LS_nivel, col = "darkgray",lwd=2)
+lines(LI_nivel, col = "darkgray",lwd=2)
+# Fator de crescimento
+LS_tendencia <- qt.scaled(0.975,resultados$nt[pto.parada,],resultados$mt[2,],sqrt(resultados$Ct[2,2,]))
+LI_tendencia <- qt.scaled(0.025,resultados$nt[pto.parada,],resultados$mt[2,],sqrt(resultados$Ct[2,2,]))
+# LS_tendencia <- qnorm(0.975,resultados$mt[2,],sqrt(resultados$Ct[2,2,]))
+# LI_tendencia <- qnorm(0.025,resultados$mt[2,],sqrt(resultados$Ct[2,2,]))
+plot(resultados$mt[2,], type = "l", col =2, main="Estimação do Fator de Crescimento", las = 1,
+xlim = c( inic, length(y) ),  ylab = " ", xlab = " ", xaxt = "n", bty = "n", lwd=3)
+axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(as.Date(dados$Data)[c(seq(1,length(y),12),length(y))], '%b-%y') )
+polygon(c(c(1:length(y)), rev(c(1:length(y)))), c(LI_tendencia, rev(LS_tendencia)),
+col= adjustcolor("darkgray", alpha.f = 0.5), border = NA)
+lines(LS_tendencia, col = "darkgray",lwd=2)
+lines(LI_tendencia, col = "darkgray",lwd=2)
+legend("topright",paste0("Desconto \n NT: ", round(d1,2), "\n S: ", round(d2,2)  ), bty = "n", cex = 1.3)
+# Sazonal
+LS_sazonal <- qt.scaled(0.975,resultados$nt[pto.parada,],resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
+LI_sazonal <- qt.scaled(0.025,resultados$nt[pto.parada,],resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
+# LS_sazonal <- qnorm(0.975,resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
+# LI_sazonal <- qnorm(0.025,resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
+plot(resultados$mt[3,], type = "l", col =2, main = "Estimação da Sazonalidade - Harmônico 1", las = 1,
+xlim = c( inic, length(y) ),  ylab = " ", xlab = " ", xaxt = "n", bty = "n", lwd=3)
+axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(as.Date(dados$Data)[c(seq(1,length(y),12),length(y))], '%b-%y') )
+polygon(c(c(1:length(y)), rev(c(1:length(y)))), c(LI_sazonal, rev(LS_sazonal)), col= adjustcolor("darkgray", alpha.f = 0.5), border = NA)
+lines(LS_sazonal, col = "darkgray",lwd=2)
+lines(LI_sazonal, col = "darkgray",lwd=2)
+if( harmonic == 2){
+LS_sazonal <- qt.scaled(0.975,resultados$nt[pto.parada,],resultados$mt[5,],sqrt(resultados$Ct[5,5,]))
+LI_sazonal <- qt.scaled(0.025,resultados$nt[pto.parada,],resultados$mt[5,],sqrt(resultados$Ct[5,5,]))
+# LS_sazonal <- qnorm(0.975,resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
+# LI_sazonal <- qnorm(0.025,resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
+plot(resultados$mt[5,], type = "l", col =2, main = "Estimação da Sazonalidade - Harmônico 2", las = 1,
+xlim = c( inic, length(y) ),  ylab = " ", xlab = " ", xaxt = "n", bty = "n", lwd=3)
+axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(as.Date(dados$Data)[c(seq(1,length(y),12),length(y))], '%b-%y') )
+polygon(c(c(1:length(y)), rev(c(1:length(y)))), c(LI_sazonal, rev(LS_sazonal)), col= adjustcolor("darkgray", alpha.f = 0.5), border = NA)
+lines(LS_sazonal, col = "darkgray",lwd=2)
+lines(LI_sazonal, col = "darkgray",lwd=2)
+}
+harmonic = 1
+options(scipen = 9999)
+library(readxl)
+library(Metrics)
+library(dlm)
+library(readxl)
+library(expm)
+library(dplyr)
+setwd("C:\\Users\\adria\\Google Drive\\Estudos e Congressos\\ESTE2019")
+dados = read.csv2("ipca_201903SerieHist.csv", header = T, dec = ",", sep = ";")
+dados = dados %>% filter( ano > 1995 )
+y <- dados$IPCA
+dados$Data2 = paste0(tolower(dados$mes),"/",dados$ano)
+# dados$Data = as.Date.character(dados$Data2, "%m/%y")
+# dados$Data2 = as.Date.character(dados$Data, "%m/%y")
+source("function3.R")
+source("Harmonicos selecionados.R")
+#Definindo F,G e D
+G.mer = dlm::bdiag(G1,G2[[1]],G2[[2]])
+FF = matrix(c(1,0,1,0,1,0))
+F.mer  = matrix(FF,nrow=length(FF),ncol=length(y))
+D1 <- matrix(1/0.8,2,2)
+D2 <- matrix(1/1,2,2)
+D.mer = dlm::bdiag(D1,D2,D2)
+D.mer_estatico = dlm::bdiag(D1,D1,D1)
+F.t<-F.mer
+G<-G.mer
+# Definindo as quantidades iniciais
+n<-nrow(F.t)
+m0 <- rep(0,n)
+C0 <- diag(100000,n,n)
+n0 <- 0.1; d0 <- .001
+#n0 / d0
+#(n0 / 2)/((d0/2) ^ 2)
+pto.parada <- length(y) - 12 #prev a partir de pto.parada
+#com desconto - dinamico
+resultados <- modelo.2ordem.var.desc_prev.k(y, m0, C0, n0, d0, Wt = NULL, F.t, G, D.mer,h0=pto.parada,int=NULL)
+if( harmonic == 2 ){
+#   par(mfrow=c(2,2), cex.lab = 1.6, cex.axis = 1.5, cex.main = 2)
+par(mfrow=c(2,2),cex.lab=1.6,cex.axis=1.6,lab=c(15,6,5),mar=c(2,10,6,2),cex.main=1.8)
+}
+if( harmonic == 1 ){
+l <- rbind(c(1,1,2,2),
+c(0,3,3,0))
+layout(l)
+par(cex.lab=1.6,cex.axis=1.6,lab=c(15,6,5),mar=c(2,10,6,2),cex.main=1.8)
+layout.show(max(l))
+}
+p = nrow( resultados$mt )
+inic = 2*p + 1
+# Estimacoo do nivel
+LS_nivel <- qt.scaled(0.975,resultados$nt[pto.parada,],resultados$mt[1,],sqrt(resultados$Ct[1,1,]))
+LI_nivel <- qt.scaled(0.025,resultados$nt[pto.parada,],resultados$mt[1,],sqrt(resultados$Ct[1,1,]))
+# LS_nivel <- qnorm(0.975,resultados$mt[1,],sqrt(resultados$Ct[1,1,]))
+# LI_nivel <- qnorm(0.025,resultados$mt[1,],sqrt(resultados$Ct[1,1,]))
+plot(as.numeric(y),pch = 20, ylab = " ", xlab = " ", main = "Estimação do Nivel",
+xlim = c( inic, length(y) ), lwd = 5,  xaxt = "n", bty = "n", las = 1)
+axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(as.Date(dados$Data)[c(seq(1,length(y),12),length(y))], '%b-%y') )
+polygon(c(c(1:length(y)), rev(c(1:length(y)))), c(LI_nivel, rev(LS_nivel)), col= adjustcolor("darkgray", alpha.f = 0.5), border = NA)
+# axis(1, at = seq(1,length(y),12), labels = 2007:2018 )
+#polygon(x = c(1:length(y), rev(1:length(y))),
+#        y = c(LI_nivel, rev(LS_nivel)), col = "blue", border = NA)
+lines(resultados$mt[1,], col = 2, lwd=3)
+lines(LS_nivel, col = "darkgray",lwd=2)
+lines(LI_nivel, col = "darkgray",lwd=2)
+# Fator de crescimento
+LS_tendencia <- qt.scaled(0.975,resultados$nt[pto.parada,],resultados$mt[2,],sqrt(resultados$Ct[2,2,]))
+LI_tendencia <- qt.scaled(0.025,resultados$nt[pto.parada,],resultados$mt[2,],sqrt(resultados$Ct[2,2,]))
+# LS_tendencia <- qnorm(0.975,resultados$mt[2,],sqrt(resultados$Ct[2,2,]))
+# LI_tendencia <- qnorm(0.025,resultados$mt[2,],sqrt(resultados$Ct[2,2,]))
+plot(resultados$mt[2,], type = "l", col =2, main="Estimação do Fator de Crescimento", las = 1,
+xlim = c( inic, length(y) ),  ylab = " ", xlab = " ", xaxt = "n", bty = "n", lwd=3)
+axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(as.Date(dados$Data)[c(seq(1,length(y),12),length(y))], '%b-%y') )
+polygon(c(c(1:length(y)), rev(c(1:length(y)))), c(LI_tendencia, rev(LS_tendencia)),
+col= adjustcolor("darkgray", alpha.f = 0.5), border = NA)
+lines(LS_tendencia, col = "darkgray",lwd=2)
+lines(LI_tendencia, col = "darkgray",lwd=2)
+legend("topright",paste0("Desconto \n NT: ", round(d1,2), "\n S: ", round(d2,2)  ), bty = "n", cex = 1.3)
+# Sazonal
+LS_sazonal <- qt.scaled(0.975,resultados$nt[pto.parada,],resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
+LI_sazonal <- qt.scaled(0.025,resultados$nt[pto.parada,],resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
+# LS_sazonal <- qnorm(0.975,resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
+# LI_sazonal <- qnorm(0.025,resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
+plot(resultados$mt[3,], type = "l", col =2, main = "Estimação da Sazonalidade - Harmônico 1", las = 1,
+xlim = c( inic, length(y) ),  ylab = " ", xlab = " ", xaxt = "n", bty = "n", lwd=3)
+axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(as.Date(dados$Data)[c(seq(1,length(y),12),length(y))], '%b-%y') )
+polygon(c(c(1:length(y)), rev(c(1:length(y)))), c(LI_sazonal, rev(LS_sazonal)), col= adjustcolor("darkgray", alpha.f = 0.5), border = NA)
+lines(LS_sazonal, col = "darkgray",lwd=2)
+lines(LI_sazonal, col = "darkgray",lwd=2)
+if( harmonic == 2){
+LS_sazonal <- qt.scaled(0.975,resultados$nt[pto.parada,],resultados$mt[5,],sqrt(resultados$Ct[5,5,]))
+LI_sazonal <- qt.scaled(0.025,resultados$nt[pto.parada,],resultados$mt[5,],sqrt(resultados$Ct[5,5,]))
+# LS_sazonal <- qnorm(0.975,resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
+# LI_sazonal <- qnorm(0.025,resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
+plot(resultados$mt[5,], type = "l", col =2, main = "Estimação da Sazonalidade - Harmônico 2", las = 1,
+xlim = c( inic, length(y) ),  ylab = " ", xlab = " ", xaxt = "n", bty = "n", lwd=3)
+axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(as.Date(dados$Data)[c(seq(1,length(y),12),length(y))], '%b-%y') )
+polygon(c(c(1:length(y)), rev(c(1:length(y)))), c(LI_sazonal, rev(LS_sazonal)), col= adjustcolor("darkgray", alpha.f = 0.5), border = NA)
+lines(LS_sazonal, col = "darkgray",lwd=2)
+lines(LI_sazonal, col = "darkgray",lwd=2)
+}
+harmonic = 2
+options(scipen = 9999)
+library(readxl)
+library(Metrics)
+library(dlm)
+library(readxl)
+library(expm)
+library(dplyr)
+setwd("C:\\Users\\adria\\Google Drive\\Estudos e Congressos\\ESTE2019")
+dados = read.csv2("ipca_201903SerieHist.csv", header = T, dec = ",", sep = ";")
+dados = dados %>% filter( ano > 1995 )
+y <- dados$IPCA
+dados$Data2 = paste0(tolower(dados$mes),"/",dados$ano)
+# dados$Data = as.Date.character(dados$Data2, "%m/%y")
+# dados$Data2 = as.Date.character(dados$Data, "%m/%y")
+source("function3.R")
+source("Harmonicos selecionados.R")
+#Definindo F,G e D
+G.mer = dlm::bdiag(G1,G2[[1]],G2[[2]])
+FF = matrix(c(1,0,1,0,1,0))
+F.mer  = matrix(FF,nrow=length(FF),ncol=length(y))
+D1 <- matrix(1/0.8,2,2)
+D2 <- matrix(1/1,2,2)
+D.mer = dlm::bdiag(D1,D2,D2)
+D.mer_estatico = dlm::bdiag(D1,D1,D1)
+F.t<-F.mer
+G<-G.mer
+# Definindo as quantidades iniciais
+n<-nrow(F.t)
+m0 <- rep(0,n)
+C0 <- diag(100000,n,n)
+n0 <- 0.1; d0 <- .001
+#n0 / d0
+#(n0 / 2)/((d0/2) ^ 2)
+pto.parada <- length(y) - 12 #prev a partir de pto.parada
+#com desconto - dinamico
+resultados <- modelo.2ordem.var.desc_prev.k(y, m0, C0, n0, d0, Wt = NULL, F.t, G, D.mer,h0=pto.parada,int=NULL)
+if( harmonic == 2 ){
+#   par(mfrow=c(2,2), cex.lab = 1.6, cex.axis = 1.5, cex.main = 2)
+par(mfrow=c(2,2),cex.lab=1.6,cex.axis=1.6,lab=c(15,6,5),mar=c(2,10,6,2),cex.main=1.8)
+}
+if( harmonic == 1 ){
+l <- rbind(c(1,1,2,2),
+c(0,3,3,0))
+layout(l)
+par(cex.lab=1.6,cex.axis=1.6,lab=c(15,6,5),mar=c(2,10,6,2),cex.main=1.8)
+layout.show(max(l))
+}
+p = nrow( resultados$mt )
+inic = 2*p + 1
+# Estimacoo do nivel
+LS_nivel <- qt.scaled(0.975,resultados$nt[pto.parada,],resultados$mt[1,],sqrt(resultados$Ct[1,1,]))
+LI_nivel <- qt.scaled(0.025,resultados$nt[pto.parada,],resultados$mt[1,],sqrt(resultados$Ct[1,1,]))
+# LS_nivel <- qnorm(0.975,resultados$mt[1,],sqrt(resultados$Ct[1,1,]))
+# LI_nivel <- qnorm(0.025,resultados$mt[1,],sqrt(resultados$Ct[1,1,]))
+plot(as.numeric(y),pch = 20, ylab = " ", xlab = " ", main = "Estimação do Nivel",
+xlim = c( inic, length(y) ), lwd = 5,  xaxt = "n", bty = "n", las = 1)
+axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(as.Date(dados$Data)[c(seq(1,length(y),12),length(y))], '%b-%y') )
+polygon(c(c(1:length(y)), rev(c(1:length(y)))), c(LI_nivel, rev(LS_nivel)), col= adjustcolor("darkgray", alpha.f = 0.5), border = NA)
+# axis(1, at = seq(1,length(y),12), labels = 2007:2018 )
+#polygon(x = c(1:length(y), rev(1:length(y))),
+#        y = c(LI_nivel, rev(LS_nivel)), col = "blue", border = NA)
+lines(resultados$mt[1,], col = 2, lwd=3)
+lines(LS_nivel, col = "darkgray",lwd=2)
+lines(LI_nivel, col = "darkgray",lwd=2)
+# Fator de crescimento
+LS_tendencia <- qt.scaled(0.975,resultados$nt[pto.parada,],resultados$mt[2,],sqrt(resultados$Ct[2,2,]))
+LI_tendencia <- qt.scaled(0.025,resultados$nt[pto.parada,],resultados$mt[2,],sqrt(resultados$Ct[2,2,]))
+# LS_tendencia <- qnorm(0.975,resultados$mt[2,],sqrt(resultados$Ct[2,2,]))
+# LI_tendencia <- qnorm(0.025,resultados$mt[2,],sqrt(resultados$Ct[2,2,]))
+plot(resultados$mt[2,], type = "l", col =2, main="Estimação do Fator de Crescimento", las = 1,
+xlim = c( inic, length(y) ),  ylab = " ", xlab = " ", xaxt = "n", bty = "n", lwd=3)
+axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(as.Date(dados$Data)[c(seq(1,length(y),12),length(y))], '%b-%y') )
+polygon(c(c(1:length(y)), rev(c(1:length(y)))), c(LI_tendencia, rev(LS_tendencia)),
+col= adjustcolor("darkgray", alpha.f = 0.5), border = NA)
+lines(LS_tendencia, col = "darkgray",lwd=2)
+lines(LI_tendencia, col = "darkgray",lwd=2)
+legend("topright",paste0("Desconto \n NT: ", round(d1,2), "\n S: ", round(d2,2)  ), bty = "n", cex = 1.3)
+# Sazonal
+LS_sazonal <- qt.scaled(0.975,resultados$nt[pto.parada,],resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
+LI_sazonal <- qt.scaled(0.025,resultados$nt[pto.parada,],resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
+# LS_sazonal <- qnorm(0.975,resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
+# LI_sazonal <- qnorm(0.025,resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
+plot(resultados$mt[3,], type = "l", col =2, main = "Estimação da Sazonalidade - Harmônico 1", las = 1,
+xlim = c( inic, length(y) ),  ylab = " ", xlab = " ", xaxt = "n", bty = "n", lwd=3)
+axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(as.Date(dados$Data)[c(seq(1,length(y),12),length(y))], '%b-%y') )
+polygon(c(c(1:length(y)), rev(c(1:length(y)))), c(LI_sazonal, rev(LS_sazonal)), col= adjustcolor("darkgray", alpha.f = 0.5), border = NA)
+lines(LS_sazonal, col = "darkgray",lwd=2)
+lines(LI_sazonal, col = "darkgray",lwd=2)
+if( harmonic == 2){
+LS_sazonal <- qt.scaled(0.975,resultados$nt[pto.parada,],resultados$mt[5,],sqrt(resultados$Ct[5,5,]))
+LI_sazonal <- qt.scaled(0.025,resultados$nt[pto.parada,],resultados$mt[5,],sqrt(resultados$Ct[5,5,]))
+# LS_sazonal <- qnorm(0.975,resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
+# LI_sazonal <- qnorm(0.025,resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
+plot(resultados$mt[5,], type = "l", col =2, main = "Estimação da Sazonalidade - Harmônico 2", las = 1,
+xlim = c( inic, length(y) ),  ylab = " ", xlab = " ", xaxt = "n", bty = "n", lwd=3)
+axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(as.Date(dados$Data)[c(seq(1,length(y),12),length(y))], '%b-%y') )
+polygon(c(c(1:length(y)), rev(c(1:length(y)))), c(LI_sazonal, rev(LS_sazonal)), col= adjustcolor("darkgray", alpha.f = 0.5), border = NA)
+lines(LS_sazonal, col = "darkgray",lwd=2)
+lines(LI_sazonal, col = "darkgray",lwd=2)
+}
+resultados2 <- modelo.2ordem.var.desc_prev.k_intervencao(y, m0, C0, n0, d0, Wt = NULL, F.t, G, D.mer,h0=pto.parada,int=70, desc = 100)
+resultados = resultados2
+if( harmonic == 2 ){
+#   par(mfrow=c(2,2), cex.lab = 1.6, cex.axis = 1.5, cex.main = 2)
+par(mfrow=c(2,2),cex.lab=1.6,cex.axis=1.6,lab=c(15,6,5),mar=c(2,10,6,2),cex.main=1.8)
+}
+if( harmonic == 1 ){
+l <- rbind(c(1,1,2,2),
+c(0,3,3,0))
+layout(l)
+par(cex.lab=1.6,cex.axis=1.6,lab=c(15,6,5),mar=c(2,10,6,2),cex.main=1.8)
+layout.show(max(l))
+}
+p = nrow( resultados$mt )
+inic = 2*p + 1
+# Estimacoo do nivel
+LS_nivel <- qt.scaled(0.975,resultados$nt[pto.parada,],resultados$mt[1,],sqrt(resultados$Ct[1,1,]))
+LI_nivel <- qt.scaled(0.025,resultados$nt[pto.parada,],resultados$mt[1,],sqrt(resultados$Ct[1,1,]))
+# LS_nivel <- qnorm(0.975,resultados$mt[1,],sqrt(resultados$Ct[1,1,]))
+# LI_nivel <- qnorm(0.025,resultados$mt[1,],sqrt(resultados$Ct[1,1,]))
+plot(as.numeric(y),pch = 20, ylab = " ", xlab = " ", main = "Estimação do Nivel",
+xlim = c( inic, length(y) ), lwd = 5,  xaxt = "n", bty = "n", las = 1)
+axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(as.Date(dados$Data)[c(seq(1,length(y),12),length(y))], '%b-%y') )
+polygon(c(c(1:length(y)), rev(c(1:length(y)))), c(LI_nivel, rev(LS_nivel)), col= adjustcolor("darkgray", alpha.f = 0.5), border = NA)
+# axis(1, at = seq(1,length(y),12), labels = 2007:2018 )
+#polygon(x = c(1:length(y), rev(1:length(y))),
+#        y = c(LI_nivel, rev(LS_nivel)), col = "blue", border = NA)
+lines(resultados$mt[1,], col = 2, lwd=3)
+lines(LS_nivel, col = "darkgray",lwd=2)
+lines(LI_nivel, col = "darkgray",lwd=2)
+# Fator de crescimento
+LS_tendencia <- qt.scaled(0.975,resultados$nt[pto.parada,],resultados$mt[2,],sqrt(resultados$Ct[2,2,]))
+LI_tendencia <- qt.scaled(0.025,resultados$nt[pto.parada,],resultados$mt[2,],sqrt(resultados$Ct[2,2,]))
+# LS_tendencia <- qnorm(0.975,resultados$mt[2,],sqrt(resultados$Ct[2,2,]))
+# LI_tendencia <- qnorm(0.025,resultados$mt[2,],sqrt(resultados$Ct[2,2,]))
+plot(resultados$mt[2,], type = "l", col =2, main="Estimação do Fator de Crescimento", las = 1,
+xlim = c( inic, length(y) ),  ylab = " ", xlab = " ", xaxt = "n", bty = "n", lwd=3)
+axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(as.Date(dados$Data)[c(seq(1,length(y),12),length(y))], '%b-%y') )
+polygon(c(c(1:length(y)), rev(c(1:length(y)))), c(LI_tendencia, rev(LS_tendencia)),
+col= adjustcolor("darkgray", alpha.f = 0.5), border = NA)
+lines(LS_tendencia, col = "darkgray",lwd=2)
+lines(LI_tendencia, col = "darkgray",lwd=2)
+legend("topright",paste0("Desconto \n NT: ", round(d1,2), "\n S: ", round(d2,2)  ), bty = "n", cex = 1.3)
+# Sazonal
+LS_sazonal <- qt.scaled(0.975,resultados$nt[pto.parada,],resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
+LI_sazonal <- qt.scaled(0.025,resultados$nt[pto.parada,],resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
+# LS_sazonal <- qnorm(0.975,resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
+# LI_sazonal <- qnorm(0.025,resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
+plot(resultados$mt[3,], type = "l", col =2, main = "Estimação da Sazonalidade - Harmônico 1", las = 1,
+xlim = c( inic, length(y) ),  ylab = " ", xlab = " ", xaxt = "n", bty = "n", lwd=3)
+axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(as.Date(dados$Data)[c(seq(1,length(y),12),length(y))], '%b-%y') )
+polygon(c(c(1:length(y)), rev(c(1:length(y)))), c(LI_sazonal, rev(LS_sazonal)), col= adjustcolor("darkgray", alpha.f = 0.5), border = NA)
+lines(LS_sazonal, col = "darkgray",lwd=2)
+lines(LI_sazonal, col = "darkgray",lwd=2)
+if( harmonic == 2){
+LS_sazonal <- qt.scaled(0.975,resultados$nt[pto.parada,],resultados$mt[5,],sqrt(resultados$Ct[5,5,]))
+LI_sazonal <- qt.scaled(0.025,resultados$nt[pto.parada,],resultados$mt[5,],sqrt(resultados$Ct[5,5,]))
+# LS_sazonal <- qnorm(0.975,resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
+# LI_sazonal <- qnorm(0.025,resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
+plot(resultados$mt[5,], type = "l", col =2, main = "Estimação da Sazonalidade - Harmônico 2", las = 1,
+xlim = c( inic, length(y) ),  ylab = " ", xlab = " ", xaxt = "n", bty = "n", lwd=3)
+axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(as.Date(dados$Data)[c(seq(1,length(y),12),length(y))], '%b-%y') )
+polygon(c(c(1:length(y)), rev(c(1:length(y)))), c(LI_sazonal, rev(LS_sazonal)), col= adjustcolor("darkgray", alpha.f = 0.5), border = NA)
+lines(LS_sazonal, col = "darkgray",lwd=2)
+lines(LI_sazonal, col = "darkgray",lwd=2)
+}
+3:20
+## Intervencao no mes 110
+int = 12*3:22 + 6
+resultados2 <- modelo.2ordem.var.desc_prev.k_intervencao(y, m0, C0, n0, d0, Wt = NULL, F.t, G, D.mer,h0=pto.parada,int=int, desc = 100)
+resultados = resultados2
+if( harmonic == 2 ){
+#   par(mfrow=c(2,2), cex.lab = 1.6, cex.axis = 1.5, cex.main = 2)
+par(mfrow=c(2,2),cex.lab=1.6,cex.axis=1.6,lab=c(15,6,5),mar=c(2,10,6,2),cex.main=1.8)
+}
+if( harmonic == 1 ){
+l <- rbind(c(1,1,2,2),
+c(0,3,3,0))
+layout(l)
+par(cex.lab=1.6,cex.axis=1.6,lab=c(15,6,5),mar=c(2,10,6,2),cex.main=1.8)
+layout.show(max(l))
+}
+p = nrow( resultados$mt )
+inic = 2*p + 1
+# Estimacoo do nivel
+LS_nivel <- qt.scaled(0.975,resultados$nt[pto.parada,],resultados$mt[1,],sqrt(resultados$Ct[1,1,]))
+LI_nivel <- qt.scaled(0.025,resultados$nt[pto.parada,],resultados$mt[1,],sqrt(resultados$Ct[1,1,]))
+# LS_nivel <- qnorm(0.975,resultados$mt[1,],sqrt(resultados$Ct[1,1,]))
+# LI_nivel <- qnorm(0.025,resultados$mt[1,],sqrt(resultados$Ct[1,1,]))
+plot(as.numeric(y),pch = 20, ylab = " ", xlab = " ", main = "Estimação do Nivel",
+xlim = c( inic, length(y) ), lwd = 5,  xaxt = "n", bty = "n", las = 1)
+axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(as.Date(dados$Data)[c(seq(1,length(y),12),length(y))], '%b-%y') )
+polygon(c(c(1:length(y)), rev(c(1:length(y)))), c(LI_nivel, rev(LS_nivel)), col= adjustcolor("darkgray", alpha.f = 0.5), border = NA)
+# axis(1, at = seq(1,length(y),12), labels = 2007:2018 )
+#polygon(x = c(1:length(y), rev(1:length(y))),
+#        y = c(LI_nivel, rev(LS_nivel)), col = "blue", border = NA)
+lines(resultados$mt[1,], col = 2, lwd=3)
+lines(LS_nivel, col = "darkgray",lwd=2)
+lines(LI_nivel, col = "darkgray",lwd=2)
+# Fator de crescimento
+LS_tendencia <- qt.scaled(0.975,resultados$nt[pto.parada,],resultados$mt[2,],sqrt(resultados$Ct[2,2,]))
+LI_tendencia <- qt.scaled(0.025,resultados$nt[pto.parada,],resultados$mt[2,],sqrt(resultados$Ct[2,2,]))
+# LS_tendencia <- qnorm(0.975,resultados$mt[2,],sqrt(resultados$Ct[2,2,]))
+# LI_tendencia <- qnorm(0.025,resultados$mt[2,],sqrt(resultados$Ct[2,2,]))
+plot(resultados$mt[2,], type = "l", col =2, main="Estimação do Fator de Crescimento", las = 1,
+xlim = c( inic, length(y) ),  ylab = " ", xlab = " ", xaxt = "n", bty = "n", lwd=3)
+axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(as.Date(dados$Data)[c(seq(1,length(y),12),length(y))], '%b-%y') )
+polygon(c(c(1:length(y)), rev(c(1:length(y)))), c(LI_tendencia, rev(LS_tendencia)),
+col= adjustcolor("darkgray", alpha.f = 0.5), border = NA)
+lines(LS_tendencia, col = "darkgray",lwd=2)
+lines(LI_tendencia, col = "darkgray",lwd=2)
+legend("topright",paste0("Desconto \n NT: ", round(d1,2), "\n S: ", round(d2,2)  ), bty = "n", cex = 1.3)
+# Sazonal
+LS_sazonal <- qt.scaled(0.975,resultados$nt[pto.parada,],resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
+LI_sazonal <- qt.scaled(0.025,resultados$nt[pto.parada,],resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
+# LS_sazonal <- qnorm(0.975,resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
+# LI_sazonal <- qnorm(0.025,resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
+plot(resultados$mt[3,], type = "l", col =2, main = "Estimação da Sazonalidade - Harmônico 1", las = 1,
+xlim = c( inic, length(y) ),  ylab = " ", xlab = " ", xaxt = "n", bty = "n", lwd=3)
+axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(as.Date(dados$Data)[c(seq(1,length(y),12),length(y))], '%b-%y') )
+polygon(c(c(1:length(y)), rev(c(1:length(y)))), c(LI_sazonal, rev(LS_sazonal)), col= adjustcolor("darkgray", alpha.f = 0.5), border = NA)
+lines(LS_sazonal, col = "darkgray",lwd=2)
+lines(LI_sazonal, col = "darkgray",lwd=2)
+if( harmonic == 2){
+LS_sazonal <- qt.scaled(0.975,resultados$nt[pto.parada,],resultados$mt[5,],sqrt(resultados$Ct[5,5,]))
+LI_sazonal <- qt.scaled(0.025,resultados$nt[pto.parada,],resultados$mt[5,],sqrt(resultados$Ct[5,5,]))
+# LS_sazonal <- qnorm(0.975,resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
+# LI_sazonal <- qnorm(0.025,resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
+plot(resultados$mt[5,], type = "l", col =2, main = "Estimação da Sazonalidade - Harmônico 2", las = 1,
+xlim = c( inic, length(y) ),  ylab = " ", xlab = " ", xaxt = "n", bty = "n", lwd=3)
+axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(as.Date(dados$Data)[c(seq(1,length(y),12),length(y))], '%b-%y') )
+polygon(c(c(1:length(y)), rev(c(1:length(y)))), c(LI_sazonal, rev(LS_sazonal)), col= adjustcolor("darkgray", alpha.f = 0.5), border = NA)
+lines(LS_sazonal, col = "darkgray",lwd=2)
+lines(LI_sazonal, col = "darkgray",lwd=2)
+}
+## Intervencao no mes 110
+int = 12*c(3:10,21) + 6
+resultados2 <- modelo.2ordem.var.desc_prev.k_intervencao(y, m0, C0, n0, d0, Wt = NULL, F.t, G, D.mer,h0=pto.parada,int=int, desc = 100)
+resultados = resultados2
+if( harmonic == 2 ){
+#   par(mfrow=c(2,2), cex.lab = 1.6, cex.axis = 1.5, cex.main = 2)
+par(mfrow=c(2,2),cex.lab=1.6,cex.axis=1.6,lab=c(15,6,5),mar=c(2,10,6,2),cex.main=1.8)
+}
+if( harmonic == 1 ){
+l <- rbind(c(1,1,2,2),
+c(0,3,3,0))
+layout(l)
+par(cex.lab=1.6,cex.axis=1.6,lab=c(15,6,5),mar=c(2,10,6,2),cex.main=1.8)
+layout.show(max(l))
+}
+p = nrow( resultados$mt )
+inic = 2*p + 1
+# Estimacoo do nivel
+LS_nivel <- qt.scaled(0.975,resultados$nt[pto.parada,],resultados$mt[1,],sqrt(resultados$Ct[1,1,]))
+LI_nivel <- qt.scaled(0.025,resultados$nt[pto.parada,],resultados$mt[1,],sqrt(resultados$Ct[1,1,]))
+# LS_nivel <- qnorm(0.975,resultados$mt[1,],sqrt(resultados$Ct[1,1,]))
+# LI_nivel <- qnorm(0.025,resultados$mt[1,],sqrt(resultados$Ct[1,1,]))
+plot(as.numeric(y),pch = 20, ylab = " ", xlab = " ", main = "Estimação do Nivel",
+xlim = c( inic, length(y) ), lwd = 5,  xaxt = "n", bty = "n", las = 1)
+axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(as.Date(dados$Data)[c(seq(1,length(y),12),length(y))], '%b-%y') )
+polygon(c(c(1:length(y)), rev(c(1:length(y)))), c(LI_nivel, rev(LS_nivel)), col= adjustcolor("darkgray", alpha.f = 0.5), border = NA)
+# axis(1, at = seq(1,length(y),12), labels = 2007:2018 )
+#polygon(x = c(1:length(y), rev(1:length(y))),
+#        y = c(LI_nivel, rev(LS_nivel)), col = "blue", border = NA)
+lines(resultados$mt[1,], col = 2, lwd=3)
+lines(LS_nivel, col = "darkgray",lwd=2)
+lines(LI_nivel, col = "darkgray",lwd=2)
+# Fator de crescimento
+LS_tendencia <- qt.scaled(0.975,resultados$nt[pto.parada,],resultados$mt[2,],sqrt(resultados$Ct[2,2,]))
+LI_tendencia <- qt.scaled(0.025,resultados$nt[pto.parada,],resultados$mt[2,],sqrt(resultados$Ct[2,2,]))
+# LS_tendencia <- qnorm(0.975,resultados$mt[2,],sqrt(resultados$Ct[2,2,]))
+# LI_tendencia <- qnorm(0.025,resultados$mt[2,],sqrt(resultados$Ct[2,2,]))
+plot(resultados$mt[2,], type = "l", col =2, main="Estimação do Fator de Crescimento", las = 1,
+xlim = c( inic, length(y) ),  ylab = " ", xlab = " ", xaxt = "n", bty = "n", lwd=3)
+axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(as.Date(dados$Data)[c(seq(1,length(y),12),length(y))], '%b-%y') )
+polygon(c(c(1:length(y)), rev(c(1:length(y)))), c(LI_tendencia, rev(LS_tendencia)),
+col= adjustcolor("darkgray", alpha.f = 0.5), border = NA)
+lines(LS_tendencia, col = "darkgray",lwd=2)
+lines(LI_tendencia, col = "darkgray",lwd=2)
+legend("topright",paste0("Desconto \n NT: ", round(d1,2), "\n S: ", round(d2,2)  ), bty = "n", cex = 1.3)
+# Sazonal
+LS_sazonal <- qt.scaled(0.975,resultados$nt[pto.parada,],resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
+LI_sazonal <- qt.scaled(0.025,resultados$nt[pto.parada,],resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
+# LS_sazonal <- qnorm(0.975,resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
+# LI_sazonal <- qnorm(0.025,resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
+plot(resultados$mt[3,], type = "l", col =2, main = "Estimação da Sazonalidade - Harmônico 1", las = 1,
+xlim = c( inic, length(y) ),  ylab = " ", xlab = " ", xaxt = "n", bty = "n", lwd=3)
+axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(as.Date(dados$Data)[c(seq(1,length(y),12),length(y))], '%b-%y') )
+polygon(c(c(1:length(y)), rev(c(1:length(y)))), c(LI_sazonal, rev(LS_sazonal)), col= adjustcolor("darkgray", alpha.f = 0.5), border = NA)
+lines(LS_sazonal, col = "darkgray",lwd=2)
+lines(LI_sazonal, col = "darkgray",lwd=2)
+if( harmonic == 2){
+LS_sazonal <- qt.scaled(0.975,resultados$nt[pto.parada,],resultados$mt[5,],sqrt(resultados$Ct[5,5,]))
+LI_sazonal <- qt.scaled(0.025,resultados$nt[pto.parada,],resultados$mt[5,],sqrt(resultados$Ct[5,5,]))
+# LS_sazonal <- qnorm(0.975,resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
+# LI_sazonal <- qnorm(0.025,resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
+plot(resultados$mt[5,], type = "l", col =2, main = "Estimação da Sazonalidade - Harmônico 2", las = 1,
+xlim = c( inic, length(y) ),  ylab = " ", xlab = " ", xaxt = "n", bty = "n", lwd=3)
+axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(as.Date(dados$Data)[c(seq(1,length(y),12),length(y))], '%b-%y') )
+polygon(c(c(1:length(y)), rev(c(1:length(y)))), c(LI_sazonal, rev(LS_sazonal)), col= adjustcolor("darkgray", alpha.f = 0.5), border = NA)
+lines(LS_sazonal, col = "darkgray",lwd=2)
+lines(LI_sazonal, col = "darkgray",lwd=2)
+}
+harmonic
+resultados$mt
+resultados$mt[1,]
