@@ -11,6 +11,7 @@ library(dlm)
 library(readxl)
 library(expm)
 library(dplyr)
+library(metRology)
 
 ### ================================================================
 ### Dataset 
@@ -23,7 +24,6 @@ getwd()
 ## Dados mensais do Sistema IBGE de Recuperação Automática (SIDRA)
 dados <- read.csv2("ipca_201903SerieHist.csv", header = T, dec = ",", sep = ";")
 dados <- dados %>% filter( ano > 1995 )
-y <- dados$IPCA 
 
 dados$Data2 <- paste0(tolower(dados$mes),"/",dados$ano)
 
@@ -33,6 +33,8 @@ dados$Data1 <- as.Date(paste0(rep("01", 279),
                               dados$ano), '%d%m%Y')
 
 dados <- dados %>% filter( as.Date(dados$Data1) > "1999-11-01" )
+
+y <- dados$IPCA 
 
 ### ================================================================
 ### Loading scripts
@@ -79,7 +81,7 @@ int = c(7, int)
 sum( dados$Data2[int] == int_date ) == 8
 
 
-# modelo
+# modelo: usando horizonte de previsao ( 3, 6, 9 e 12 meses )
 resultados = list()
 pto.parada = NULL
 
@@ -98,6 +100,7 @@ for( i in 1:4 ){
 pred = list()
 real = list()
 pred_power = list()
+mape = list()
 
 for( i in 1:4 ){
   
@@ -105,10 +108,21 @@ for( i in 1:4 ){
   real[[i]] = y[(pto.parada[i]+1):length(y)]
   
   pred_power[[i]] = QPS( pred[[i]], real[[i]] )
-  
+  mape[[i]] = MAPE( pred[[i]], real[[i]] )*100
 }
 
 
+### ================================================================
+### Graphics
+### ================================================================
+
+for( i in 1:4){
+  title = paste0("prev_3passos_interv_k=",3*i,".pdf")
+  graf_previsao( resultados[[i]], 
+                 pto.parada[i],
+                 main = title,
+                 interv = int)
+}
 
 
 
