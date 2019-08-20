@@ -12,7 +12,7 @@ library(expm)
 
 
 ### Modelo Dinamico para previsao k passos
-modelo.2ordem.var.desc_prev.k <- function(y, m0, C0, n0, d0, Wt = NULL, F.t, G, D,h0,int=NULL){
+modelo.2ordem.var.desc_prev.k <- function(y, m0, C0, n0, d0, Wt = NULL, F.t, G, D,h0){
   D[D==0]<-1
   #Definindo os objetos
   n <- nrow(F.t) ; r <-1
@@ -269,7 +269,7 @@ modelo.2ordem.var.desc_prev.k_intervencao <- function(y, m0, C0, n0, d0, Wt = NU
   return(result)
 }
 
-### Função para criacao dos graficos
+### Fun??o para criacao dos graficos
 
 grafico = function( resultados, harmonic = 1, d1, d2, main = " "){
   
@@ -304,7 +304,7 @@ grafico = function( resultados, harmonic = 1, d1, d2, main = " "){
   LI_nivel <- qt.scaled(0.025,resultados$nt[pto.parada,],resultados$mt[1,],sqrt(resultados$Ct[1,1,]))
   # LS_nivel <- qnorm(0.975,resultados$mt[1,],sqrt(resultados$Ct[1,1,]))
   # LI_nivel <- qnorm(0.025,resultados$mt[1,],sqrt(resultados$Ct[1,1,]))
-  plot(as.numeric(y),pch = 20, ylab = " ", xlab = " ", main = "Estimação do Nivel",
+  plot(as.numeric(y),pch = 20, ylab = " ", xlab = " ", main = "Estima??o do Nivel",
        xlim = c( inic, length(y) ), lwd = 5,  xaxt = "n", bty = "n", las = 1)
   axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(as.Date(dados$Data)[c(seq(1,length(y),12),length(y))], '%b-%y') )
   polygon(c(c(1:length(y)), rev(c(1:length(y)))), c(LI_nivel, rev(LS_nivel)), col= adjustcolor("darkgray", alpha.f = 0.5), border = NA)
@@ -320,7 +320,7 @@ grafico = function( resultados, harmonic = 1, d1, d2, main = " "){
   LI_tendencia <- qt.scaled(0.025,resultados$nt[pto.parada,],resultados$mt[2,],sqrt(resultados$Ct[2,2,]))
   # LS_tendencia <- qnorm(0.975,resultados$mt[2,],sqrt(resultados$Ct[2,2,]))
   # LI_tendencia <- qnorm(0.025,resultados$mt[2,],sqrt(resultados$Ct[2,2,]))
-  plot(resultados$mt[2,], type = "l", col =2, main="Estimação do Fator de Crescimento", las = 1,
+  plot(resultados$mt[2,], type = "l", col =2, main="Estima??o do Fator de Crescimento", las = 1,
        xlim = c( inic, length(y) ),  ylab = " ", xlab = " ", xaxt = "n", bty = "n", lwd=3)
   # axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(as.Date(dados$Data)[c(seq(1,length(y),12),length(y))], '%b-%y') )
   axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(dados$Data[c(seq(1,length(y),12),length(y))], '%b-%y') )
@@ -336,7 +336,7 @@ grafico = function( resultados, harmonic = 1, d1, d2, main = " "){
   LI_sazonal <- qt.scaled(0.025,resultados$nt[pto.parada,],resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
   # LS_sazonal <- qnorm(0.975,resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
   # LI_sazonal <- qnorm(0.025,resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
-  plot(resultados$mt[3,], type = "l", col =2, main = "Estimação da Sazonalidade - Harmônico 1", las = 1, 
+  plot(resultados$mt[3,], type = "l", col =2, main = "Estima??o da Sazonalidade - Harm?nico 1", las = 1, 
        xlim = c( inic, length(y) ),  ylab = " ", xlab = " ", xaxt = "n", bty = "n", lwd=3)
   # axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(as.Date(dados$Data)[c(seq(1,length(y),12),length(y))], '%b-%y') )
   axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(dados$Data[c(seq(1,length(y),12),length(y))], '%b-%y') )
@@ -349,7 +349,7 @@ grafico = function( resultados, harmonic = 1, d1, d2, main = " "){
     LI_sazonal <- qt.scaled(0.025,resultados$nt[pto.parada,],resultados$mt[5,],sqrt(resultados$Ct[5,5,]))
     # LS_sazonal <- qnorm(0.975,resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
     # LI_sazonal <- qnorm(0.025,resultados$mt[3,],sqrt(resultados$Ct[3,3,]))
-    plot(resultados$mt[5,], type = "l", col =2, main = "Estimação da Sazonalidade - Harmônico 2", las = 1, 
+    plot(resultados$mt[5,], type = "l", col =2, main = "Estima??o da Sazonalidade - Harm?nico 2", las = 1, 
          xlim = c( inic, length(y) ),  ylab = " ", xlab = " ", xaxt = "n", bty = "n", lwd=3)
     # axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(as.Date(dados$Data)[c(seq(1,length(y),12),length(y))], '%b-%y') )
     axis(1, at = c(seq(1,length(y),12),length(y)), labels = format(dados$Data[c(seq(1,length(y),12),length(y))], '%b-%y') )
@@ -363,8 +363,6 @@ grafico = function( resultados, harmonic = 1, d1, d2, main = " "){
   dev.off()
   
 }
-
-
 
 graf_previsao = function( resultados, pto.parada, main = " ", interv = 0 ){
   
@@ -396,10 +394,9 @@ graf_previsao = function( resultados, pto.parada, main = " ", interv = 0 ){
   
 }
 
+### Fun??o para tabelas com medidas comparativas
 
-### Função para tabelas com medidas comparativas
-
-criterios <-  function(y,k, sazonalidade, tendencia){ #função que calcula preditiva dado diferentes valores de desconto
+criterios <-  function(y,k, sazonalidade, tendencia){ #fun??o que calcula preditiva dado diferentes valores de desconto
   # D
   
   D1 <- matrix(1/tendencia,2,2)
@@ -444,7 +441,7 @@ criterios <-  function(y,k, sazonalidade, tendencia){ #função que calcula predit
 }
 
 
-### Funções para destacar min e max de tabela
+### Fun??es para destacar min e max de tabela
 select_min<-function(tab){
   par(mfrow=c(1,1))
   tab<-round(tab,2)
@@ -455,7 +452,7 @@ select_min<-function(tab){
   image(x,y,t(tab), col = "white",
         xaxt = 'n', 
         yaxt = 'n', 
-        xlab = 'tendência', 
+        xlab = 'tend?ncia', 
         ylab = 'sazonalidade')
   
   
@@ -485,7 +482,7 @@ select_max<-function(tab){
   image(x,y,t(tab), col = "white",
         xaxt = 'n', 
         yaxt = 'n', 
-        xlab = 'tendência', 
+        xlab = 'tend?ncia', 
         ylab = 'sazonalidade')
   
   
@@ -506,4 +503,8 @@ select_max<-function(tab){
 }
 
 
+### Calcular o predictive power
 
+QPS =  function( pred, real ){
+ return( 2 * sum( (real - pred)^2 ) / length( pred ) )
+}
