@@ -43,5 +43,5 @@ dados <- merge(dados, res, by.x = 'ano', by.y = 'ano', all.x = T)
 dados$regime <- paste("Inf=", dados$banda_i, "Meta=", m=dados$meta, "Sup=", dados$banda_s)
 rm(res,y, aux)
 
-dados <- dados %>% filter( ano > 1998 )
+dados <- dados %>% filter( as.Date(dados$Data1) > "1999-11-01" )
 

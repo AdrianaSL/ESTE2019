@@ -1,5 +1,6 @@
 ######### Setup #########
-rm(list = ls()); getwd()
+rm(list = ls())
+getwd()
 source('dataloader.R')
 
 # Cria fatores para ordenação dos Regimes adotados 
@@ -29,49 +30,33 @@ ggplot(dados, aes(x=regime_fac, y=IPCA, color=regime)) +
 
 ## Previsão SARIMA
 library(tseries)
+library(forecast)
 
 ## Define série temporal como Log-IPCA
-y <- IPCA
-lambda <- BoxCox.lambda(y, method = 'guerrero')
-
-z <- ts((y^(-lambda) - 1)/(-lambda), start = c(1999, 1), end = c(2019, 3), frequency = 12)
-plot(z)
+yt <- ts(c(IPCA, 4.94, 4.66, 3.37, 3.22), start = c(1999, 12), end = c(2019, 7), frequency = 12)
+zt <- window(yt, start = c(1999, 12), end = c(2018, 7), frequency = 12 )
+tseries::adf.test(zt) 
+auto.arima(zt)
 
 ## Teste de Dickey Fuller
 # Rejeita-se a hipótese nula de que os dados não são estacionários
-adf.test(z) 
 
 if(!require(ggfortify)) {install.packages('ggfortify'); require('ggfortify')}
 if(!require(gridExtra)) {install.packages('gridExtra'); require('gridExtra')}
 if(!require(forecast)) {install.packages('forecast'); require('forecast')}
 if(!require(DescTools)) {install.packages('DescTools'); require('DescTools')}
 source('functions.R')
-fac_facp(z, top="IPCA(1999-2019)", lag=60, titulo="")
-auto.arima(z)
 
-fit <- arima(z, order = c(1,1,2), seasonal = c(2,0,1), optim.control = list(maxit = 1000))
-# summary(fit)
+fit <- arima(zt, order = c(1,1,0), seasonal = c(2,0,1), optim.control = list(maxit = 1000))
+summary(fit)
 
-ljungbox(fit, 6)
-norm_test(fit, titulo = '')
-shapiro.test(fit$residuals)
-hist(fit$residuals, freq = F)
-curve(dnorm(x), add = T)
-previsao(fit, 4, alpha =.95)
+tsdiag(fit)
+pred <- forecast::forecast(fit, h = 12, level = .95)
+ 
+date <-c(timetk::tk_index(pred$x), timetk::tk_index(pred$mean))
+plot(date, yt, pch = 20, bty = 'n', xlab = '', ylab = 'IPCA')
+lines(date, c(pred$fitted, pred$mean), col = 2, lwd = 2)
+abline(v = date[224], lty = 2, lwd = 2)
 
-plot(fit$residuals)
-n <- length(z)
-abline(h = c(-1.96/sqrt(n),1.96/sqrt(n)))
 
-previsao = forecast::forecast(fit, h = 4, level = .95)  
-tt <- function(x, lambda){
-  (1-lambda*x)^(-1/lambda)
-}
-previsao$lower <-  tt(previsao$lower, lambda)
-previsao$upper <-  tt(previsao$upper, lambda)
 
-previsao$mean <-  tt(previsao$mean, lambda)
-previsao$x <-  tt(previsao$x, lambda)
-previsao
-
-autoplot(previsao)
