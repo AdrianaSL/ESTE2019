@@ -45,3 +45,11 @@ rm(res,y, aux)
 
 dados <- dados %>% filter( as.Date(dados$Data1) > "1999-11-01" )
 
+
+
+
+
+
+
+
+
