@@ -383,7 +383,7 @@ grafico = function( resultados, harmonic = 1, d1, d2, main = " "){
   
 }
 
-graf_previsao = function( resultados, pto.parada, main = " ", interv = 0 ){
+graf_previsao = function( resultados, pto.parada, main = " ", interv, LS_prev, LI_prev ){
   
   pdf(main,width=15,height=7)  
   
@@ -393,8 +393,6 @@ graf_previsao = function( resultados, pto.parada, main = " ", interv = 0 ){
   inic = 2*p + 1
   
   # Previsao
-  LS_prev <- qt.scaled(0.975,resultados$nt[pto.parada,], resultados$ft, sqrt(resultados$Qt))
-  LI_prev <- qt.scaled(0.025,resultados$nt[pto.parada,], resultados$ft, sqrt(resultados$Qt))
   plot(as.numeric(y), pch = 20, ylab = " ", xlab = " ", las = 1,
        xlim = c( inic, length(y)+10 ), ylim = c(min(y) - 5, max(y) + 5),
        lwd = 2 ,  bty = "n", cex.axis = 0.1)

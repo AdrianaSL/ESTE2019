@@ -45,3 +45,11 @@ rm(res,y, aux)
 
 dados <- dados %>% filter( ano > 1998 )
 
+
+
+
+
+
+
+
+

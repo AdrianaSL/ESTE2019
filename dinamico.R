@@ -36,6 +36,8 @@ dados <- dados %>% filter( as.Date(dados$Data1) > "1999-11-01" )
 
 y <- dados$IPCA 
 
+y = c(y, 4.94, 4.66, 3.37, 3.22)
+
 ### ================================================================
 ### Loading scripts
 ### ================================================================
@@ -52,7 +54,7 @@ source("Harmonicos selecionados.R")
 G = dlm::bdiag(G1,G2[[1]],G2[[2]])               #G1 (tendencia), G2[[1]] (harmonico 1 -> p = 12) e G2[[2]] (harmonico 2 -> p = 6)
 FF = matrix(c(1,0,1,0,1,0))                          
 F.t  = matrix(FF,nrow=length(FF),ncol=length(y))
-D1 <- matrix(1/0.8,2,2)                          #D1 (desconto de 0,8)
+D1 <- matrix(1/0.7,2,2)                          #D1 (desconto de 0,8)
 D2 <- matrix(1/1,2,2)                            #D2 (desconto de 1, i.e., nao tem desconto - estatico)
 D = dlm::bdiag(D1,D2,D2)                         #D1 (desconto na tendencia), D2 (desconto nos dois harmonicos)
 
@@ -111,17 +113,37 @@ for( i in 1:4 ){
   mape[[i]] = MAPE( pred[[i]], real[[i]] )*100
 }
 
+pred_in = list()
+real_in = list()
+pred_power_in = list()
+mape_in = list()
+
+for( i in 1:4 ){
+  
+  pred_in[[i]] = resultados[[i]]$mt[1,][1:pto.parada[i]]
+  real_in[[i]] = y[1:pto.parada[i]]
+  
+  pred_power_in[[i]] = QPS( pred_in[[i]], real_in[[i]] )
+  mape_in[[i]] = MAPE( pred_in[[i]], real_in[[i]] )*100
+}
 
 ### ================================================================
 ### Graphics
 ### ================================================================
+LS_prev = list()
+LI_prev = list()
 
 for( i in 1:4){
-  title = paste0("prev_3passos_interv_k=",3*i,".pdf")
+  LS_prev[[i]] <- qt.scaled(0.975,resultados[[i]]$nt[pto.parada,], resultados[[i]]$ft, sqrt(resultados[[i]]$Qt))
+  LI_prev[[i]] <- qt.scaled(0.025,resultados[[i]]$nt[pto.parada,], resultados[[i]]$ft, sqrt(resultados[[i]]$Qt))
+  
+  title = paste0("prev_3passos_interv_k=",3*i,"_3.pdf")
   graf_previsao( resultados[[i]], 
                  pto.parada[i],
                  main = title,
-                 interv = int)
+                 interv = int,
+                 LS_prev = LS_prev[[i]],
+                 LI_prev = LI_prev[[i]])
 }
 
 
