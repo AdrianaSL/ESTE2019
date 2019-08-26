@@ -58,5 +58,17 @@ plot(date, yt, pch = 20, bty = 'n', xlab = '', ylab = 'IPCA')
 lines(date, c(pred$fitted, pred$mean), col = 2, lwd = 2)
 abline(v = date[224], lty = 2, lwd = 2)
 
+pto.parada = 224
+graf_previsao(yt,
+               as.vector(pred$fitted) , 
+               pto.parada,
+               main = "prev_12passos_sarima.pdf",
+               interv = 0,
+               LS_prev = c( rep(NA, pto.parada), pred$upper),
+               LI_prev = c( rep(NA, pto.parada), pred$lower)
+              )
+
+
+
 
 

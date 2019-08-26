@@ -70,7 +70,7 @@ d0 <- .001
 
 ### Modelo com intervencao =====
 
-# intervencao nos meses: [1] "mai/2003" "mai/2004" "mai/2005" "mai/2006" "mai/2007" "mai/2008" "mai/2009" "mai/2010"
+# intervencao nos meses: "jun/2000", "jun/2001", "jun/2002", "jun/2003", "jun/2004", "jun/2005", "jun/2006", "jun/2017"
 
 int_date = c("jun/2000", "jun/2001", "jun/2002", "jun/2003", "jun/2004", "jun/2005", "jun/2006", "jun/2017")
 for( i in 1:length(int_date)){
@@ -83,7 +83,7 @@ int = c(7, int)
 sum( dados$Data2[int] == int_date ) == 8
 
 
-# modelo: usando horizonte de previsao ( 3, 6, 9 e 12 meses )
+# modelos: usando horizonte de previsao ( 3, 6, 9 e 12 meses )
 resultados = list()
 pto.parada = NULL
 
@@ -98,7 +98,46 @@ for( i in 1:4 ){
   
 }
 
+### o que vamos usar eh o resultado do modelo com horizonte de previsao de 12 passos a frente
+result = resultados[[4]] 
+pto.parada = pto.parada[4]
 
+# ### diagnostico do modelo -> k = 3, 6, 9, 12 =====
+# 
+# pred = list()
+# real = list()
+# pred_power = list()
+# mape = list()
+# 
+# for( i in 1:4 ){
+#   
+#   pred[[i]] = resultados[[i]]$mt[1,][(pto.parada[i]+1):length(y)]
+#   real[[i]] = y[(pto.parada[i]+1):length(y)]
+#   
+#   pred_power[[i]] = QPS( pred[[i]], real[[i]] )
+#   mape[[i]] = MAPE( pred[[i]], real[[i]] )*100
+# }
+# 
+# pred_in = list()
+# real_in = list()
+# pred_power_in = list()
+# mape_in = list()
+# 
+# for( i in 1:4 ){
+#   
+#   pred_in[[i]] = resultados[[i]]$mt[1,][1:pto.parada[i]]
+#   real_in[[i]] = y[1:pto.parada[i]]
+#   
+#   pred_power_in[[i]] = QPS( pred_in[[i]], real_in[[i]] )
+#   mape_in[[i]] = MAPE( pred_in[[i]], real_in[[i]] )*100
+# }
+
+### diagnostico do modelo =====
+# avaliando k = 3, 6, 9, 12 passos a frente, em um modelo que faz 12 passos a frente
+
+k = c(3, 6, 9, 12)
+
+## erro de previsao
 pred = list()
 real = list()
 pred_power = list()
@@ -106,49 +145,115 @@ mape = list()
 
 for( i in 1:4 ){
   
-  pred[[i]] = resultados[[i]]$mt[1,][(pto.parada[i]+1):length(y)]
-  real[[i]] = y[(pto.parada[i]+1):length(y)]
+  pred[[i]] = result$ft[(pto.parada+1):(pto.parada + k[i])]
+  real[[i]] = y[(pto.parada+1):(pto.parada + k[i])]
   
   pred_power[[i]] = QPS( pred[[i]], real[[i]] )
   mape[[i]] = MAPE( pred[[i]], real[[i]] )*100
+  
+  names(pred_power)[i] = paste0("k = ",3*i)
+  names(mape)[i] = paste0("k = ",3*i)
+  
 }
 
-pred_in = list()
-real_in = list()
-pred_power_in = list()
-mape_in = list()
+mape
+# 
+# $`k = 3`
+# [1] 2.633223
+# 
+# $`k = 6`
+# [1] 17.13106
+# 
+# $`k = 9`
+# [1] 18.85146
+# 
+# $`k = 12`
+# [1] 31.04113
 
-for( i in 1:4 ){
+## erro de estimacao
+pred_in = NULL
+real_in = NULL
+pred_power_in = NULL
+mape_in = NULL
+
+
+  pred_in = result$ft[ 1:pto.parada ]
+  real_in = y[ 1:pto.parada ]
   
-  pred_in[[i]] = resultados[[i]]$mt[1,][1:pto.parada[i]]
-  real_in[[i]] = y[1:pto.parada[i]]
-  
-  pred_power_in[[i]] = QPS( pred_in[[i]], real_in[[i]] )
-  mape_in[[i]] = MAPE( pred_in[[i]], real_in[[i]] )*100
-}
+  pred_power_in = QPS( pred_in, real_in )
+  mape_in = MAPE( pred_in, real_in )*100
+
+  mape_in
+
+  # > mape_in
+  # [1] 6.738137
 
 ### ================================================================
 ### Graphics
 ### ================================================================
-LS_prev = list()
-LI_prev = list()
+# LS_prev = list()
+# LI_prev = list()
+# 
+# for( i in 1:4){
+#   LS_prev[[i]] <- qt.scaled(0.975,resultados[[i]]$nt[pto.parada,], resultados[[i]]$ft, sqrt(resultados[[i]]$Qt))
+#   LI_prev[[i]] <- qt.scaled(0.025,resultados[[i]]$nt[pto.parada,], resultados[[i]]$ft, sqrt(resultados[[i]]$Qt))
+#   
+#   title = paste0("prev_3passos_interv_k=",3*i,"_3.pdf")
+#   graf_previsao( resultados[[i]], 
+#                  pto.parada[i],
+#                  main = title,
+#                  interv = int,
+#                  LS_prev = LS_prev[[i]],
+#                  LI_prev = LI_prev[[i]])
+# }
 
-for( i in 1:4){
-  LS_prev[[i]] <- qt.scaled(0.975,resultados[[i]]$nt[pto.parada,], resultados[[i]]$ft, sqrt(resultados[[i]]$Qt))
-  LI_prev[[i]] <- qt.scaled(0.025,resultados[[i]]$nt[pto.parada,], resultados[[i]]$ft, sqrt(resultados[[i]]$Qt))
+
+LS_prev <- qt.scaled(0.975,result$nt[pto.parada,], result$ft, sqrt(result$Qt))
+LI_prev <- qt.scaled(0.025,result$nt[pto.parada,], result$ft, sqrt(result$Qt))
+
+graf_estimado(y = y[1:pto.parada],
+              y_hat = result$ft[1:pto.parada],
+              inic = 1,
+              main = "estimado_dlm_interv.pdf",
+              interv = int,
+              IC = T,
+              LS_prev = LS_prev[1:pto.parada] ,
+              LI_prev = LI_prev[1:pto.parada])
+
+graf_previsao( y = y,
+               y_hat  = result$ft,
+               inic = 6,
+               pto.parada = pto.parada,
+               main = "previsao_dlm_interv.pdf",
+               interv = int,  
+               LS_prev = LS_prev,
+               LI_prev = LI_prev)
+
+  graf_previsao( y = y,
+                 y_hat = result$ft,
+                 inic = 200,
+                 pto.parada = pto.parada,
+                 main = "previsao_dlm_interv_zoom200.pdf",
+                 interv = int,  
+                 LS_prev = LS_prev,
+                 LI_prev = LI_prev)
+
+
   
-  title = paste0("prev_3passos_interv_k=",3*i,"_3.pdf")
-  graf_previsao( resultados[[i]], 
-                 pto.parada[i],
-                 main = title,
-                 interv = int,
-                 LS_prev = LS_prev[[i]],
-                 LI_prev = LI_prev[[i]])
-}
-
-
-
-
+  
+  graf_dlmXsarima(y = y,
+                  y_hat1 = result$ft,
+                  y_hat2 = ,
+                  name_yhat1 = "dinamico",
+                  name_yhat2 = "SARIMA",
+                  inic = 200,
+                  main = "previsao_dlmXsarima_zoom200",
+                  interv = int,
+                  IC = T,
+                  LS_prev1 = LS_prev,
+                  LI_prev1 = LI_prev,
+                  LS_prev2 = NULL,
+                  LI_prev2 = NULL)
 
 
 

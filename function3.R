@@ -383,14 +383,15 @@ grafico = function( resultados, harmonic = 1, d1, d2, main = " "){
   
 }
 
-graf_previsao = function( resultados, pto.parada, main = " ", interv, LS_prev, LI_prev ){
+### grafico previsao ==========
+graf_previsao = function(y, y_hat, inic = 6, pto.parada, main = " ", interv, IC = T, LS_prev, LI_prev ){
   
   pdf(main,width=15,height=7)  
   
   par(mfrow=c(1,1),  cex.lab=1.6,cex.axis=1.6,lab=c(15,6,5),cex.main=1.8, mar=c(2,10,6,2))
   
-  p = nrow( resultados$mt )
-  inic = 2*p + 1
+  # p = nrow( resultados$mt )
+  # inic = 2*p + 1
   
   # Previsao
   plot(as.numeric(y), pch = 20, ylab = " ", xlab = " ", las = 1,
@@ -400,17 +401,112 @@ graf_previsao = function( resultados, pto.parada, main = " ", interv, LS_prev, L
        labels = dados$Data2[c( seq(1,length(y), 12 ) + 1, length(y) )]
        )
   axis(2, at = seq( 0, 20, 5 ), labels = seq( 0, 20, 5 ), las = 1 )
-  polygon( c( c(1:length(y)), rev( c(1:length(y)) ) ),
-           c( LI_prev, rev(LS_prev) ),
-           col= adjustcolor("darkgray", alpha.f = 0.5),
-           border = NA)
+  
+  lines( y_hat, col = 2, lwd = 3 ) 
+  
+  if( IC ==T ){
+    polygon( c( c(1:length(y)), rev( c(1:length(y)) ) ),
+             c( LI_prev, rev(LS_prev) ),
+             col= adjustcolor("darkgray", alpha.f = 0.5),
+             border = NA)
+    lines( LS_prev, col = "darkgray", lwd = 2 )
+    lines( LI_prev, col = "darkgray", lwd = 2 )
+  }
+  
   # abline( v = c( seq( 1,length(y), 12),length(y) ),
    #       col = "grey" , lwd = .5 )
   abline( v = pto.parada, lty = 2, lwd = 3 )
   abline( v = interv , lwd = 1, lty = 2, col = "blue")
-  lines( resultados$ft, col = 2, lwd = 3 ) 
-  lines( LS_prev, col = "darkgray", lwd = 2 )
-  lines( LI_prev, col = "darkgray", lwd = 2 )
+
+  
+  dev.off()
+  
+}
+
+### grafico para os valores estimados
+graf_estimado = function(y, y_hat, inic = 6, main = " ", interv = NULL, IC = F, LS_prev = NULL, LI_prev = NULL){
+  
+  pdf(main,width=15,height=7)  
+  
+  par(mfrow=c(1,1),  cex.lab=1.6,cex.axis=1.6,lab=c(15,6,5),cex.main=1.8, mar=c(2,10,6,2))
+  
+  # Previsao
+  plot(as.numeric(y), pch = 20, ylab = " ", xlab = " ", las = 1,
+       xlim = c( inic, length(y)+10 ), ylim = c(min(y) - 5, max(y) + 5),
+       lwd = 2 ,  bty = "n", cex.axis = 0.1)
+  axis(1, at = c( seq(1,length(y),12) + 1, length(y) ),
+       labels = dados$Data2[c( seq(1,length(y), 12 ) + 1, length(y) )]
+  )
+  axis(2, at = seq( 0, 20, 5 ), labels = seq( 0, 20, 5 ), las = 1 )
+  lines( y_hat, col = 2, lwd = 3 ) 
+  
+  if( IC == T ){
+    polygon( c( c(1:length(y)), rev( c(1:length(y)) ) ),
+             c( LI_prev, rev(LS_prev) ),
+             col= adjustcolor("darkgray", alpha.f = 0.5),
+             border = NA)
+    lines( LS_prev, col = "darkgray", lwd = 2 )
+    lines( LI_prev, col = "darkgray", lwd = 2 )
+  }
+
+  # abline( v = c( seq( 1,length(y), 12),length(y) ),
+  #       col = "grey" , lwd = .5 )
+  # abline( v = pto.parada, lty = 2, lwd = 3 )
+
+  if( length(interv) > 0 ){
+    abline( v = interv , lwd = 1, lty = 2, col = "blue")
+  }
+  
+  
+  dev.off()
+  
+}
+
+### grafico dinamico e sarima juntos
+graf_dlmXsarima = function(y, y_hat1, y_hat2 , name_yhat1, name_yhat2, inic = 6, main = " ", interv = NULL, IC = F, LS_prev1 = NULL, LI_prev1 = NULL, LS_prev2 = NULL, LI_prev2 = NULL){
+  
+  pdf(main,width=15,height=7)  
+  
+  par(mfrow=c(1,1),  cex.lab=1.6,cex.axis=1.6,lab=c(15,6,5),cex.main=1.8, mar=c(2,10,6,2))
+  
+  # Previsao
+  plot(as.numeric(y), pch = 20, ylab = " ", xlab = " ", las = 1,
+       xlim = c( inic, length(y)+10 ), ylim = c(min(y) - 5, max(y) + 5),
+       lwd = 2 ,  bty = "n", cex.axis = 0.1)
+  axis(1, at = c( seq(1,length(y),12) + 1, length(y) ),
+       labels = dados$Data2[c( seq(1,length(y), 12 ) + 1, length(y) )]
+  )
+  axis(2, at = seq( 0, 20, 5 ), labels = seq( 0, 20, 5 ), las = 1 )
+  lines( y_hat1, col = "red", lwd = 3 )  # previsao modelo 1
+  lines( y_hat2, col = "blue", lwd = 3 ) # previsao modelo 2
+  legend("topright", legend = c(name_yhat1, name_yhat2), title = "Modelo", fill = c("red", "blue"))
+  
+  if( IC == T){
+    # ic para o modelo 1
+    polygon( c( c(1:length(y)), rev( c(1:length(y)) ) ),
+             c( LI_prev1, rev(LS_prev1) ),
+             col= adjustcolor("red", alpha.f = 0.2),
+             border = NA)
+    lines( LS_prev1, col = adjustcolor("red", alpha.f = 0.2), lwd = 2 )
+    lines( LI_prev1, col = adjustcolor("red", alpha.f = 0.2), lwd = 2 )
+    
+    #ic para o modelo 2
+    polygon( c( c(1:length(y)), rev( c(1:length(y)) ) ),
+             c( LI_prev2, rev(LS_prev2) ),
+             col= adjustcolor("blue", alpha.f = 0.2),
+             border = NA)
+    lines( LS_prev2, col = adjustcolor("blue", alpha.f = 0.5), lwd = 2 )
+    lines( LI_prev2, col = adjustcolor("blue", alpha.f = 0.5), lwd = 2 )
+  }
+  
+  # abline( v = c( seq( 1,length(y), 12),length(y) ),
+  #       col = "grey" , lwd = .5 )
+  # abline( v = pto.parada, lty = 2, lwd = 3 )
+  
+  if( length(interv) > 0 ){
+    abline( v = interv , lwd = 1, lty = 2, col = "blue")
+  }
+  
   
   dev.off()
   
